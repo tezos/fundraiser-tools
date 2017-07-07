@@ -1,2 +1,2 @@
 # fundraiser-tools
-Tolls for checking keys created in the Tezos fundraiser
+Tools for checking keys created in the Tezos fundraiser
