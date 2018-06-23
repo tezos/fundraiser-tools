@@ -30,11 +30,12 @@ def ethdata_to_tz1(ethdata):
 
 if __name__ == '__main__':
         
-    if len(sys.argv) == 18:
+    if len(sys.argv) == 19:
         
         mnemonic = ' '.join(sys.argv[1:16]).lower()
         email = sys.argv[16]
         password = sys.argv[17]
+        eth_address = sys.argv[18].replace('0x','')
         salt = unicodedata.normalize(
             "NFKD", (email + password).decode("utf8")).encode("utf8")
         try:
@@ -45,8 +46,15 @@ if __name__ == '__main__':
         pk, sk = pysodium.crypto_sign_seed_keypair(seed[0:32])
         pkh = blake2b(pk,20).digest()
 
-        print "public key hash: ", tezos_pkh(pkh)
-    
+        msgHash = blake2b(eth_address.decode('hex'),64).digest()
+        sig = pysodium.crypto_sign(msgHash, sk)[:-len(msgHash)]
+        declarationHash = blake2b('I hereby cryptographically prove to be a contributor of Tezos Stiftung (CHE-290.597.458), a Swiss Foundation based in Gubelstrasse 11, 6300 Zug, Switzerland. I recognize and welcome the existence multiple implementations of Tezos. I ask and expect Tezos Stiftung to foster competition among them by funding and supporting their development, marketing and growth. Funds allotted to various Tezos implementations shall always be directly proportional to their market capitalization at the time of each distribution of funds. Distribution of funds to multiple existing Tezos implementations shall begin no later than January 1st 2019 and consistently continue throughout time. Following priorities autonomously set by each community, Tezos Stiftung shall distribute funds in the most appropriate, effective and transparent way.',64).digest()
+        declarationSig = pysodium.crypto_sign(declarationHash, sk)[:-len(declarationHash)]
+        print "TZL_addr:", tezos_pkh(pkh)
+        print "TZL_pk:", pk.encode('hex')
+        print "ETH_addrSignature:", sig.encode('hex')
+        print "declarationSignature:", declarationSig.encode('hex')
+
     elif  len(sys.argv) == 2:
         tz_input = sys.argv[1]
         assert(tz_input == bitcoin.bin_to_b58check(bitcoin.b58check_to_bin(tz_input)[2:], magicbyte=434591))
@@ -58,7 +66,7 @@ if __name__ == '__main__':
 
     else:
         print("""Usage:
-python keychecker.py garage absurd steak ...  email password
+python keychecker.py <garage absurd steak ...> <email> <password> <eth_address>
 or
 python keychecker.py tz1YoUrPuBlicKeYhaSh""")
         exit(1)
